@@ -1,0 +1,25 @@
+version: '2'
+services:
+  web:
+    container_name: turg_web
+    environment:
+      - CONFIG_FILE=/app/config.yml
+    build: .
+    entrypoint:
+      - /usr/local/bin/gunicorn
+      - turg.main:app
+      - -b=0.0.0.0:8080
+      - -t=60
+      - --worker-class=aiohttp.worker.GunicornUVLoopWebWorker
+      - --reload
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+    links:
+      - mongo_db
+  mongo_db:
+    container_name: mongo_db
+    image: mongo:3.4
+    volumes:
+      - ./dbvolume:/data/db

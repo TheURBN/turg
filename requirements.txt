@@ -1,0 +1,4 @@
+aiohttp==2.2.5
+uvloop==0.8.1
+motor==1.1
+PyYAML==3.12
