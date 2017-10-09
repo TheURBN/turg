@@ -1,6 +1,10 @@
 from aiohttp import web
 import hmac
 
+from turg.config import Config
+
+config = Config()
+
 
 async def ws_notify(app, what):
     for ws in app.get('websockets', []):
