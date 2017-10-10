@@ -23,6 +23,9 @@ class Config(object):
     db_host = None
     db_port = None
     db_name = None
+    max_x = None
+    max_y = None
+    max_z = None
 
     def __init__(self, conf_file=None):
         if not Config.db_host:
@@ -43,3 +46,7 @@ class Config(object):
         Config.db_host = get_from_env_or_config(config, 'db_host', 'localhost')
         Config.db_port = get_from_env_or_config(config, 'db_port', 27017)
         Config.db_name = get_from_env_or_config(config, 'db_name', 'healthchecks')
+
+        Config.max_x = get_from_env_or_config(config, 'max_x', 1000)
+        Config.max_y = get_from_env_or_config(config, 'max_y', 1000)
+        Config.max_z = get_from_env_or_config(config, 'max_z', 100)
