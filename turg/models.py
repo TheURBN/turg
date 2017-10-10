@@ -14,7 +14,6 @@ class Voxel(object):
     y = attr.ib(convert=int)
     z = attr.ib(convert=int)
     owner = attr.ib()
-    timestamp = attr.ib(default=datetime.utcnow())
 
 
 async def get_voxels(x, y, range, db):
@@ -23,7 +22,6 @@ async def get_voxels(x, y, range, db):
                            projection={'_id': False})
     data = []
     async for result in results:
-        result['timestamp'] = result['timestamp'].isoformat()
         data.append(result)
 
     return data
