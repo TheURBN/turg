@@ -1,10 +1,12 @@
 import attr
-
 from aiohttp import web
 
-from pymongo.errors import DuplicateKeyError
-
 from turg.models import Voxel
+from turg.config import Config
+from turg.logger import getLogger
+
+logger = getLogger()
+config = Config()
 
 
 class Voxels(web.View):
@@ -40,10 +42,8 @@ class Voxels(web.View):
 
         try:
             await store_voxel(voxel, db)
-        except DuplicateKeyError:
-            return web.json_response({'error': {'message': 'Already occupied'}}, status=409)
         except ValueError:
-            return web.json_response({'error': {'message': 'Invalid voxel location'}}, status=400)
+            return web.json_response({'error': {'message': 'Invalid voxel location'}}, status=409)
         else:
             return web.json_response({'status': 'ok'}, status=200)
 
@@ -66,12 +66,11 @@ def factory(app):
 
 
 def verify_payload(payload):
-    if not all([s in payload for s in ('x', 'y', 'z', 'owner')]):
-        return False
-    if not all([isinstance(payload[s], int) and payload[s] <= 1000 and payload[s] >= 0 for s in
-                ['x', 'y', 'z', 'owner']]):
-        return False
     if set(payload.keys()) != {'x', 'y', 'z', 'owner'}:
+        return False
+    if any([payload[i] < 0 for i in ['x', 'y', 'z']]):
+        return False
+    if payload['x'] > config.max_x or payload['y'] > config.max_y or payload['z'] > config.max_z:
         return False
     return True
 
@@ -82,13 +81,12 @@ async def store_voxel(voxel: Voxel, db):
                                      'z': {'$lte': voxel.z + 1, '$gte': voxel.z - 1}},
                                     projection={'_id': False}).to_list(50)
 
-    adjacent = [n for n in neighbours if
-                n['y'] == voxel.y and n['z'] == voxel.z or
-                n['y'] == voxel.y and n['x'] == voxel.x or
-                n['z'] == voxel.z and n['x'] == voxel.x
-                ]
+    occupied = [n for n in neighbours if n['x'] == voxel.x
+                and n['y'] == voxel.y and n['z'] == voxel.z]
 
-    if not adjacent and voxel.z != 0:
+    conflict = [n for n in neighbours if n['owner'] != voxel.owner]
+
+    if occupied or conflict:
         raise ValueError("Invalid voxel location")
 
     await db.data.insert_one(attr.asdict(voxel))

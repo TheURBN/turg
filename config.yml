@@ -1,3 +1,6 @@
 db_host: mongo_db
 db_port: 27017
 db_name: turg_db
+max_x: 1000
+max_y: 1000
+max_z: 100
