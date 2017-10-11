@@ -1,8 +1,7 @@
 import attr
-from datetime import datetime
 
-from turg.logger import getLogger
 from turg.config import Config
+from turg.logger import getLogger
 
 config = Config()
 logger = getLogger()

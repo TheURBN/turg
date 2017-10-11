@@ -1,8 +1,8 @@
 from aiohttp import web
 
-from turg.models import Voxel, get_voxels, store_voxel, verify_payload
 from turg.config import Config
 from turg.logger import getLogger
+from turg.models import Voxel, get_voxels, store_voxel, verify_payload
 
 logger = getLogger()
 config = Config()

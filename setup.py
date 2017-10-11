@@ -16,7 +16,7 @@ setup(
     name=PACKAGE_NAME,
     author='ToxicWar',
     description=DESCRIPTION,
-    url='https://github.com/ToxicWar/turg',
+    url='https://github.com/theurbn/turg',
     license='Apache License',
     install_requires=reqs,
     packages=find_packages(exclude=['tests']),
