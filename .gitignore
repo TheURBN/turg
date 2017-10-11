@@ -100,4 +100,5 @@ ENV/
 # mypy
 .mypy_cache/
 
-dbvolume.env
+dbvolume
+.env
