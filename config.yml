@@ -1,6 +1,4 @@
-db_host: mongo_db
-db_port: 27017
-db_name: turg_db
+mongodb_uri: mongodb://mongo_db:27017/turg_db
 max_x: 1000
 max_y: 1000
 max_z: 100

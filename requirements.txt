@@ -3,3 +3,4 @@ attrs==17.2.0
 uvloop==0.8.1
 motor==1.1
 PyYAML==3.12
+gunicorn==19.7.1

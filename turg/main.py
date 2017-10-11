@@ -1,12 +1,12 @@
 from aiohttp import web
 from motor.motor_asyncio import AsyncIOMotorClient
 
+from turg.config import Config
+from turg.logger import getLogger
 from turg.views import (
     voxels,
     websocket,
 )
-from turg.config import Config
-from turg.logger import getLogger
 
 logger = getLogger(__name__)
 config = Config()
@@ -25,14 +25,9 @@ def create_app():
 
 
 async def on_start(app):
-    client = AsyncIOMotorClient(
-        config.db_host,
-        config.db_port
-    )
-    db = client[config.db_name]
-
-    app['db'] = db
+    client = AsyncIOMotorClient(config.mongodb_uri)
     app['db_client'] = client
+    app['db'] = client.get_default_database()  # defined in mongodb_uri
     app['websockets'] = []
 
 
