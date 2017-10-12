@@ -29,6 +29,7 @@ async def on_start(app):
     app['db_client'] = client
     app['db'] = client.get_default_database()  # defined in mongodb_uri
     app['websockets'] = []
+    app['players'] = {}
 
 
 async def on_shutdown(app):

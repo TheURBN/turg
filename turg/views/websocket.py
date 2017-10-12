@@ -1,4 +1,5 @@
 import json
+import attr
 from aiohttp import web, WSMsgType
 from aiohttp.web import WebSocketResponse
 
@@ -15,7 +16,6 @@ class WebSocket(web.View):
         await ws.prepare(self.request)
 
         self.request.app['websockets'].append(ws)
-        db = self.request.app['db']
 
         async for msg in ws:
             logger.info("MSG: %s", msg)
@@ -29,8 +29,7 @@ class WebSocket(web.View):
                         pass
                     else:
                         logger.info("Got request: %s", data)
-                        result = await process_request(data, db)
-                        ws.send_json(result)
+                        await process_request(data, ws, self.request.app)
 
             elif msg.tp == WSMsgType.error:
                 pass
@@ -49,7 +48,7 @@ def factory(app):
     }
 
 
-async def process_request(data, db):
+async def process_request(data, ws, app):
     if 'method' not in data or ('args' not in data or not isinstance(data, dict)):
         return {'error': {'message': {'Method and args required'}}}
 
@@ -57,16 +56,47 @@ async def process_request(data, db):
     args = data['args']
 
     if method == 'get':
-        return await get_voxels(args.get('x', 0), args.get('y', 0), args.get('range', 25), db)
+        await retrieve(args, ws, app)
     elif method == 'post':
-        if not verify_payload(args):
-            return {'error': {'message': 'Invalid payload'}}
-        voxel = Voxel(**args)
-        try:
-            await store_voxel(voxel, db)
-        except ValueError as e:
-            return {'error': {'message': str(e)}}
-        else:
-            return {'status': 'ok'}
+        await place(args, ws, app)
     else:
-        return {'error': {'message': {'Unknown method or no method specified'}}}
+        await ws.send_json({'error': {'message': {'Unknown method or no method specified'}}})
+
+
+async def retrieve(args, ws, app):
+    x, y, range = args.get('x', 0), args.get('y', 0), args.get('range', 25)
+    voxels = await get_voxels(x, y, range, app['db'])
+    app['players'][ws] = {'x': x, 'y': y, 'range': range}
+    await ws.send_json(voxels)
+
+
+async def place(args, ws, app):
+    if not verify_payload(args):
+        return await ws.send_json({'error': {'message': 'Invalid payload'}})
+
+    voxel = Voxel(**args)
+
+    try:
+        await store_voxel(voxel, app['db'])
+    except ValueError as e:
+        return await ws.send_json({'error': {'message': str(e)}})
+    else:
+        return await broadcast(voxel, app)
+
+
+async def broadcast(voxel, app):
+    for ws in app['websockets']:
+        position = app['players'].get(ws)
+        if not position or in_range(voxel, position):
+            try:
+                await ws.send_json(attr.asdict(voxel))
+            except:
+                logger.info("Failed to send update to socket %s", id(ws))
+
+
+def in_range(voxel, position):
+    x, y, range = position.get('x', 0), position.get('y', 0), position.get('range', 25)
+    x_in_range = voxel.x > x - range and voxel.x < x + range
+    y_in_range = voxel.y > y - range and voxel.y < y + range
+
+    return x_in_range and y_in_range
