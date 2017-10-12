@@ -64,9 +64,9 @@ async def process_request(data, ws, app):
 
 
 async def retrieve(args, ws, app):
-    x, y, range = args.get('x', 0), args.get('y', 0), args.get('range', 25)
-    voxels = await get_voxels(x, y, range, app['db'])
-    app['players'][ws] = {'x': x, 'y': y, 'range': range}
+    x, y, r = args.get('x', 0), args.get('y', 0), args.get('range', 25)
+    voxels = await get_voxels(x, y, r, app['db'])
+    app['players'][ws] = {'x': x, 'y': y, 'range': r}
     await ws.send_json(voxels)
 
 
@@ -95,8 +95,8 @@ async def broadcast(voxel, app):
 
 
 def in_range(voxel, position):
-    x, y, range = position.get('x', 0), position.get('y', 0), position.get('range', 25)
-    x_in_range = voxel.x > x - range and voxel.x < x + range
-    y_in_range = voxel.y > y - range and voxel.y < y + range
+    x, y, r = position.get('x', 0), position.get('y', 0), position.get('range', 25)
+    x_in_range = voxel.x > x - r and voxel.x < x + r
+    y_in_range = voxel.y > y - r and voxel.y < y + r
 
     return x_in_range and y_in_range
