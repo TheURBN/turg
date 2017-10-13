@@ -1,5 +1,6 @@
 from aiohttp import web
 from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import ASCENDING
 
 from turg.config import Config
 from turg.logger import getLogger
@@ -29,6 +30,7 @@ async def on_start(app):
     app['db_client'] = client
     app['db'] = client.get_default_database()  # defined in mongodb_uri
     app['websockets'] = []
+    await app['db'].data.create_index([('x', ASCENDING), ('y', ASCENDING)])
 
 
 async def on_shutdown(app):
