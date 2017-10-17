@@ -37,13 +37,13 @@ async def on_start(app):
 
 async def ping(app):
     while True:
-        logger.info("Pinging connected clients...")
         await asyncio.sleep(config.ping_interval)
         for ws in app['websockets']:
             try:
                 ws.ping()
             except:
                 logger.error("Client ping failed")
+                await ws.close()
 
 
 async def on_shutdown(app):
