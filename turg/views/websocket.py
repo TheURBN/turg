@@ -49,7 +49,7 @@ def factory(app):
 
 
 async def process_request(data, ws, app):
-    if 'type' not in data or ('args' not in data or not isinstance(data, dict)):
+    if not isinstance(data, dict) or 'type' not in data or 'args' not in data:
         return {'error': {'message': {'Method and args required'}}}
 
     _id = data.get('id', None)
@@ -62,7 +62,10 @@ async def process_request(data, ws, app):
     elif _type == 'update':
         await place(args, ws, app, meta)
     else:
-        await ws.send_json({'error': {'message': {'Unknown method or no method specified'}}})
+        await ws.send_json({
+            'error': {'message': {'Unknown method or no method specified'}},
+            'meta': meta,
+        })
 
 
 async def retrieve(args, ws, app, meta):
@@ -73,14 +76,20 @@ async def retrieve(args, ws, app, meta):
 
 async def place(args, ws, app, meta):
     if not verify_payload(args):
-        return await ws.send_json({'error': {'message': 'Invalid payload'}})
+        return await ws.send_json({
+            'error': {'message': 'Invalid payload'},
+            'meta': meta,
+        })
 
     voxel = Voxel(**args)
 
     try:
         await store_voxel(voxel, app['db'])
     except ValueError as e:
-        return await ws.send_json({'error': {'message': str(e)}})
+        return await ws.send_json({
+            'error': {'message': str(e)},
+            'meta': meta,
+        })
     else:
         return await broadcast(voxel, app, meta)
 
