@@ -29,6 +29,7 @@ class Config(object):
     max_x = None
     max_y = None
     max_z = None
+    ping_interval = None
 
     def __init__(self):
         Config.load()
@@ -50,3 +51,4 @@ class Config(object):
         Config.max_x = get_from_env_or_config(config, 'max_x', 1000)
         Config.max_y = get_from_env_or_config(config, 'max_y', 1000)
         Config.max_z = get_from_env_or_config(config, 'max_z', 100)
+        Config.ping_interval = get_from_env_or_config(config, 'ping_interval', 20)

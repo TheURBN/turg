@@ -2,3 +2,4 @@ mongodb_uri: mongodb://mongo_db:27017/turg_db
 max_x: 5000
 max_y: 5000
 max_z: 100
+ping_interval: 20
