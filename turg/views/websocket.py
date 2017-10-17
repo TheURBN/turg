@@ -99,7 +99,7 @@ async def broadcast(voxel, app, meta):
         try:
             await ws.send_json({'data': attr.asdict(voxel), 'meta': meta})
         except:
-            logger.info("Failed to send update to socket %s", id(ws))
+            logger.exception("Failed to send update to socket %s", id(ws))
 
 
 def in_range(voxel, position):

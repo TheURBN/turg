@@ -42,7 +42,7 @@ async def ping(app):
             try:
                 ws.ping()
             except:
-                logger.error("Client ping failed")
+                logger.exception("Client ping failed")
                 await ws.close()
 
 
