@@ -98,6 +98,7 @@ async def broadcast(voxel, app, meta):
     for ws in app['websockets']:
         try:
             await ws.send_json({'data': attr.asdict(voxel), 'meta': meta})
+            logger.info("Broadcast voxel %s for %s", meta['id'], id(ws))
         except:
             logger.exception("Failed to send update to socket %s", id(ws))
 
