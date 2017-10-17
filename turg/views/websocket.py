@@ -68,7 +68,6 @@ async def process_request(data, ws, app):
 async def retrieve(args, ws, app, meta):
     x, y, r = args.get('x', 0), args.get('y', 0), args.get('range', 25)
     voxels = await get_voxels(x, y, r, app['db'])
-    app['players'][ws] = {'x': x, 'y': y, 'range': r}
     await ws.send_json({'data': voxels, 'meta': meta})
 
 
@@ -88,12 +87,10 @@ async def place(args, ws, app, meta):
 
 async def broadcast(voxel, app, meta):
     for ws in app['websockets']:
-        position = app['players'].get(ws)
-        if not position or in_range(voxel, position):
-            try:
-                await ws.send_json({'data': attr.asdict(voxel), 'meta': meta})
-            except:
-                logger.info("Failed to send update to socket %s", id(ws))
+        try:
+            await ws.send_json({'data': attr.asdict(voxel), 'meta': meta})
+        except:
+            logger.info("Failed to send update to socket %s", id(ws))
 
 
 def in_range(voxel, position):
