@@ -49,49 +49,57 @@ def factory(app):
 
 
 async def process_request(data, ws, app):
-    if 'method' not in data or ('args' not in data or not isinstance(data, dict)):
+    if not isinstance(data, dict) or 'type' not in data or 'args' not in data:
         return {'error': {'message': {'Method and args required'}}}
 
-    method = data['method'].lower()
+    _id = data.get('id', None)
+    _type = data['type'].lower()
     args = data['args']
+    meta = {'id': _id, 'type': _type}
 
-    if method == 'get':
-        await retrieve(args, ws, app)
-    elif method == 'post':
-        await place(args, ws, app)
+    if _type == 'range':
+        await retrieve(args, ws, app, meta)
+    elif _type == 'update':
+        await place(args, ws, app, meta)
     else:
-        await ws.send_json({'error': {'message': {'Unknown method or no method specified'}}})
+        await ws.send_json({
+            'error': {'message': {'Unknown method or no method specified'}},
+            'meta': meta,
+        })
 
 
-async def retrieve(args, ws, app):
+async def retrieve(args, ws, app, meta):
     x, y, r = args.get('x', 0), args.get('y', 0), args.get('range', 25)
     voxels = await get_voxels(x, y, r, app['db'])
-    app['players'][ws] = {'x': x, 'y': y, 'range': r}
-    await ws.send_json(voxels)
+    await ws.send_json({'data': voxels, 'meta': meta})
 
 
-async def place(args, ws, app):
+async def place(args, ws, app, meta):
     if not verify_payload(args):
-        return await ws.send_json({'error': {'message': 'Invalid payload'}})
+        return await ws.send_json({
+            'error': {'message': 'Invalid payload'},
+            'meta': meta,
+        })
 
     voxel = Voxel(**args)
 
     try:
         await store_voxel(voxel, app['db'])
     except ValueError as e:
-        return await ws.send_json({'error': {'message': str(e)}})
+        return await ws.send_json({
+            'error': {'message': str(e)},
+            'meta': meta,
+        })
     else:
-        return await broadcast(voxel, app)
+        return await broadcast(voxel, app, meta)
 
 
-async def broadcast(voxel, app):
+async def broadcast(voxel, app, meta):
     for ws in app['websockets']:
-        position = app['players'].get(ws)
-        if not position or in_range(voxel, position):
-            try:
-                await ws.send_json(attr.asdict(voxel))
-            except:
-                logger.info("Failed to send update to socket %s", id(ws))
+        try:
+            await ws.send_json({'data': attr.asdict(voxel), 'meta': meta})
+        except:
+            logger.info("Failed to send update to socket %s", id(ws))
 
 
 def in_range(voxel, position):
