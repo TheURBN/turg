@@ -21,6 +21,7 @@ class WebSocket(web.View):
             logger.info("MSG: %s", msg)
             if msg.tp == WSMsgType.text:
                 if msg.data == 'close':
+                    logger.info("Close ws connection")
                     await ws.close()
                 else:
                     try:
@@ -32,7 +33,7 @@ class WebSocket(web.View):
                         await process_request(data, ws, self.request.app)
 
             elif msg.tp == WSMsgType.error:
-                pass
+                logger.exception("Got ws error %s", id(ws))
 
         self.request.app['websockets'].remove(ws)
 

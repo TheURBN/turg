@@ -38,12 +38,22 @@ async def on_start(app):
 async def ping(app):
     while True:
         await asyncio.sleep(config.ping_interval)
+        closed_ws = []
+
         for ws in app['websockets']:
             try:
+                logger.info("Ping ws %s", id(ws))
+
                 ws.ping()
             except:
                 logger.exception("Client ping failed")
+                logger.info("Close ws %s", id(ws))
+
                 await ws.close()
+                closed_ws.append(ws)
+
+        for ws in closed_ws:
+            app['websockets'].remove(ws)
 
 
 async def on_shutdown(app):
