@@ -8,6 +8,7 @@ from turg.logger import getLogger
 from turg.views import (
     voxels,
     websocket,
+    leaderboard,
 )
 
 logger = getLogger(__name__)
@@ -17,7 +18,7 @@ config = Config()
 def create_app():
     app = web.Application()
 
-    for view in (voxels, websocket):
+    for view in (voxels, websocket, leaderboard):
         routes = view.factory(app)
         routes = routes if isinstance(routes, list) else [routes]
         for route in routes:
