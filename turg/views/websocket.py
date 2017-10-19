@@ -76,6 +76,7 @@ async def retrieve(args, ws, app, meta):
 
 
 async def place(args, ws, app, meta):
+    args.pop('capturable', None)
     if not verify_payload(args):
         return await ws.send_json({
             'error': {'message': 'Invalid payload'},
