@@ -1,0 +1,29 @@
+qbplotter
+=========
+
+```
+⇒  python qbplotter.py --src ./samples/spotA.qb --owner 4 --x 502 --y 502 --sleep 10
+Loading ./samples/spotA.qb
+Loading Matrix b'' with size (18, 9, 16)
+Object contains 384 voxels
+Plot start position (502, 502, 0)
+Owner 4
+Connecting with https://turg-svc.herokuapp.com/v1/ws/
+0/384 voxels
+100/384 voxels
+200/384 voxels
+300/384 voxels
+```
+
+
+Options
+-------
+- -src           .qb file full path             string
+- --owner         to plot as player 0..X         int
+- --x --y --z     plot offset in the World       int
+- --sleep         delay in ms between plots      int
+- --turg-url      theurbn backend url            string
+
+Fixtures
+--------
+- ./samples/spotA.png
