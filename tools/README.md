@@ -26,4 +26,11 @@ Options
 
 Fixtures
 --------
-- ./samples/spotA.png
+- samples/spotA.qb
+<p align="center">
+	<img src="https://github.com/TheURBN/turg/raw/master/tools/samples/spotA.png" alt="allexx was here"/>
+</p>
+- sample/spotB.qb
+<p align="center">
+	<img src="https://github.com/TheURBN/turg/raw/master/tools/samples/spotB.png" alt="allexx was here"/>
+</p>
