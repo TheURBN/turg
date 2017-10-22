@@ -109,7 +109,7 @@ async def broadcast(voxel, app, meta):
 
 def in_range(voxel, position):
     x, y, r = position.get('x', 0), position.get('y', 0), position.get('range', 25)
-    x_in_range = voxel.x > x - r and voxel.x < x + r
-    y_in_range = voxel.y > y - r and voxel.y < y + r
+    x_in_range = x - r < voxel.x < x + r
+    y_in_range = y - r < voxel.y < y + r
 
     return x_in_range and y_in_range
