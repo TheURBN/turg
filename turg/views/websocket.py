@@ -62,6 +62,8 @@ async def process_request(data, ws, app):
         await retrieve(args, ws, app, meta)
     elif _type == 'update':
         await place(args, ws, app, meta)
+    elif _type == 'user':
+        await broadcast(args, app, meta)
     else:
         await ws.send_json({
             'error': {'message': {'Unknown method or no method specified'}},
@@ -96,13 +98,15 @@ async def place(args, ws, app, meta):
         return await broadcast(voxel, app, meta)
 
 
-async def broadcast(voxel, app, meta):
-    data = attr.asdict(voxel)
-    data.pop('updated', None)
+async def broadcast(data, app, meta):
+    if not isinstance(data, dict):
+        data = attr.asdict(data)
+        data.pop('updated', None)
+
     for ws in app['websockets']:
         try:
             await ws.send_json({'data': data, 'meta': meta})
-            logger.info("Broadcast voxel %s for %s", meta['id'], id(ws))
+            logger.info("Broadcast data %s for %s", meta['id'], id(ws))
         except:
             logger.exception("Failed to send update to socket %s", id(ws))
 
