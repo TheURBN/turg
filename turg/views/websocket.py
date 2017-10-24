@@ -6,7 +6,6 @@ from aiohttp.web import WebSocketResponse
 from turg.logger import getLogger
 from turg.models import get_voxels, verify_payload, store_voxel, Voxel
 
-
 logger = getLogger()
 
 
@@ -90,10 +89,12 @@ async def place(args, ws, app, meta):
     try:
         await store_voxel(voxel, app['db'])
     except ValueError as e:
-        return await ws.send_json({
-            'error': {'message': str(e)},
-            'meta': meta,
-        })
+        res = {'error': {'message': str(e)},
+                'meta': meta,
+                }
+        if e.args and isinstance(e.args[0], dict):
+            res['error'] = e.args[0]
+        return await ws.send_json(res)
     else:
         return await broadcast(voxel, app, meta)
 
@@ -102,6 +103,8 @@ async def broadcast(data, app, meta):
     if not isinstance(data, dict):
         data = attr.asdict(data)
         data.pop('updated', None)
+        if not data.get('capturable'):
+            data.pop('capturable', None)
 
     for ws in app['websockets']:
         try:

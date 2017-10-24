@@ -30,6 +30,8 @@ async def get_voxels(x, y, range, db):
                            projection={'_id': False, 'updated': False})
     data = []
     async for result in results:
+        if not result.get('capturable'):
+            result.pop('capturable', None)
         data.append(result)
 
     return data
@@ -72,8 +74,17 @@ async def store_voxel(voxel: Voxel, db):
 
     conflict = [n for n in neighbours if n['owner'] != voxel.owner]
     logger.info("VOXEL: %s, N: %s", voxel, neighbours)
-    if occupied or conflict:
-        raise ValueError("Invalid voxel location")
+    if occupied:
+        occupied[0].pop('capturable', None)
+        occupied[0].pop('updated', None)
+        raise ValueError({"message": "Space already occupied",
+                          "conflict": occupied[0]})
+    if conflict:
+        for v in conflict:
+            v.pop('capturable', None)
+            v.pop('updated', None)
+        raise ValueError({"message": "Too close to other player's voxels",
+                          "conflict": conflict})
 
     await db.data.insert_one(attr.asdict(voxel))
 
