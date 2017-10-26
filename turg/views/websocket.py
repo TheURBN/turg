@@ -22,7 +22,7 @@ class WebSocket(web.View):
             color = await get_user_color(self.request.app, uid)
         except ValueError:
             return web.json_response(
-                {'error': {'message': 'Can\'t get color info'}}, status=400)
+                {'error': {'message': 'Can\'t get color info'}}, status=500)
 
         if not color:
             return web.json_response(status=401)
