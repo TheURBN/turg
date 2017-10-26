@@ -33,8 +33,12 @@ class WebSocket(web.View):
         await ws.prepare(self.request)
 
         self.request.app['websockets'].append(ws)
+        self.request.app['websockets_colors'][id(ws)] = color
 
-        await ws.send_json({'color': color})
+        await ws.send_json({
+            'data': {'color': color},
+            'meta': {'type': 'userColor'},
+        })
 
         async for msg in ws:
             logger.info("MSG: %s", msg)
@@ -103,8 +107,10 @@ async def place(args, ws, app, meta):
         })
 
     try:
+        args['owner'] = app['websockets_colors'][id(ws)]
+        logger.info('WS color: %s', args['owner'])
         voxel = await store_voxel(Voxel(**args), app['db'])
-    except ValueError as e:
+    except (ValueError, KeyError) as e:
         res = {
             'error': {'message': str(e)},
             'meta': meta,
