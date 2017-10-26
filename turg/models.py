@@ -70,10 +70,12 @@ async def store_voxel(voxel: Voxel, db):
         await db.leaderboard.update_one({'owner': occupied[0]['owner']},
                                         {'$inc': {'time': ownership_time}},
                                         upsert=True)
-        return
+        voxel.capturable = True
+        return voxel
 
     conflict = [n for n in neighbours if n['owner'] != voxel.owner]
     logger.info("VOXEL: %s, N: %s", voxel, neighbours)
+
     if occupied:
         occupied[0].pop('capturable', None)
         occupied[0].pop('updated', None)
@@ -87,6 +89,7 @@ async def store_voxel(voxel: Voxel, db):
                           "conflict": conflict})
 
     await db.data.insert_one(attr.asdict(voxel))
+    return voxel
 
 
 async def get_leaders(db):

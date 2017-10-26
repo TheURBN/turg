@@ -84,10 +84,8 @@ async def place(args, ws, app, meta):
             'meta': meta,
         })
 
-    voxel = Voxel(**args)
-
     try:
-        await store_voxel(voxel, app['db'])
+        voxel = await store_voxel(Voxel(**args), app['db'])
     except ValueError as e:
         res = {'error': {'message': str(e)},
                 'meta': meta,
