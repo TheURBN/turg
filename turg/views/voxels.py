@@ -4,6 +4,9 @@ from turg.config import Config
 from turg.logger import getLogger
 from turg.models import Voxel, get_voxels, store_voxel, verify_payload
 
+from turg.views import check_authorization
+from turg.views.websocket import broadcast
+
 logger = getLogger()
 config = Config()
 
@@ -18,10 +21,11 @@ class Voxels(web.View):
 
         return web.json_response(data, status=200)
 
+    @check_authorization
     async def post(self):
         try:
             payload = await self.request.json()
-            payload.pop('capturable', None)
+            payload.pop('name', None)
             if not verify_payload(payload):
                 raise ValueError("Incorrect payload")
             voxel = Voxel(**payload)
@@ -34,10 +38,11 @@ class Voxels(web.View):
         db = self.request.app['db']
 
         try:
-            await store_voxel(voxel, db)
+            voxel = await store_voxel(voxel, db)
         except ValueError:
             return web.json_response({'error': {'message': 'Invalid voxel location'}}, status=409)
         else:
+            await broadcast(voxel, self.request.app, {'id': None, 'type': 'update'})
             return web.json_response({'status': 'ok'}, status=200)
 
 
