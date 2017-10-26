@@ -60,3 +60,10 @@ class Config(object):
             raise ValueError("api_key parameter is missing in configuration")
 
         Config.api_key = api_key
+
+        service_account = get_from_env_or_config(config, 'service_account', None)
+
+        if not service_account or service_account == 'None':
+            raise ValueError("service_account parameter is missing in configuration")
+
+        Config.service_account = service_account

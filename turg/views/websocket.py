@@ -5,16 +5,36 @@ from aiohttp.web import WebSocketResponse
 
 from turg.logger import getLogger
 from turg.models import get_voxels, verify_payload, store_voxel, Voxel
+from turg.firebase import get_user_color
 
 logger = getLogger()
 
 
 class WebSocket(web.View):
     async def get(self):
+        try:
+            uid = self.request.query['uid']
+        except KeyError:
+            return web.json_response(
+                {'error': {'message': 'Data not valid'}}, status=400)
+
+        try:
+            color = await get_user_color(self.request.app, uid)
+        except ValueError:
+            return web.json_response(
+                {'error': {'message': 'Can\'t get color info'}}, status=400)
+
+        if not color:
+            return web.json_response(status=401)
+
+        logger.info('User color: %s', color)
+
         ws = WebSocketResponse()
         await ws.prepare(self.request)
 
         self.request.app['websockets'].append(ws)
+
+        await ws.send_json({'color': color})
 
         async for msg in ws:
             logger.info("MSG: %s", msg)
@@ -61,8 +81,6 @@ async def process_request(data, ws, app):
         await retrieve(args, ws, app, meta)
     elif _type == 'update':
         await place(args, ws, app, meta)
-    elif _type == 'user':
-        await broadcast(args, app, meta)
     else:
         await ws.send_json({
             'error': {'message': {'Unknown method or no method specified'}},
@@ -87,9 +105,10 @@ async def place(args, ws, app, meta):
     try:
         voxel = await store_voxel(Voxel(**args), app['db'])
     except ValueError as e:
-        res = {'error': {'message': str(e)},
-                'meta': meta,
-                }
+        res = {
+            'error': {'message': str(e)},
+            'meta': meta,
+        }
         if e.args and isinstance(e.args[0], dict):
             res['error'] = e.args[0]
         return await ws.send_json(res)
