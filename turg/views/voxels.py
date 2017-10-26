@@ -3,6 +3,8 @@ from aiohttp import web
 from turg.config import Config
 from turg.logger import getLogger
 from turg.models import Voxel, get_voxels, store_voxel, verify_payload
+
+from turg.views import check_authorization
 from turg.views.websocket import broadcast
 
 logger = getLogger()
@@ -19,6 +21,7 @@ class Voxels(web.View):
 
         return web.json_response(data, status=200)
 
+    @check_authorization
     async def post(self):
         try:
             payload = await self.request.json()
