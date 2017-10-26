@@ -11,7 +11,6 @@ logger = getLogger()
 
 @attr.s
 class Voxel(object):
-
     def __attrs_post_init__(self):
         if self.updated is None:
             self.updated = datetime.utcnow()
@@ -38,7 +37,7 @@ async def get_voxels(x, y, range, db):
 
 
 def verify_payload(payload):
-    if set(payload.keys()) != {'x', 'y', 'z', 'owner'}:
+    if any(key not in {'x', 'y', 'z', 'owner', 'name'} for key in payload.keys()):
         return False
     if any([payload[i] < 0 for i in ['x', 'y', 'z']]):
         return False
@@ -55,6 +54,12 @@ async def store_voxel(voxel: Voxel, db):
 
     occupied = [n for n in neighbours if n['x'] == voxel.x
                 and n['y'] == voxel.y and n['z'] == voxel.z]
+
+    valid = [n for n in neighbours if
+             n['y'] == voxel.y and n['z'] == voxel.z or
+             n['y'] == voxel.y and n['x'] == voxel.x or
+             n['z'] == voxel.z and n['x'] == voxel.x] \
+            or voxel.z == 0
 
     flag = occupied and occupied[0].get('name')
 
@@ -88,7 +93,21 @@ async def store_voxel(voxel: Voxel, db):
         raise ValueError({"message": "Too close to other player's voxels",
                           "conflict": conflict})
 
+    if not valid:
+        data = attr.asdict(voxel)
+        data.pop('name', None)
+        data.pop('updated', None)
+        raise ValueError({"message": "Voxel can be placed at ground level "
+                                     "or adjacent to your other voxels",
+                          "conflict": data})
+
     await db.data.insert_one(attr.asdict(voxel))
+    return voxel
+
+
+async def store_voxel_as_root(voxel: Voxel, db):
+    await db.data.update_one({'x': voxel.x, 'y': voxel.y, 'z': voxel.z},
+                             {"$set": attr.asdict(voxel)}, upsert=True)
     return voxel
 
 
