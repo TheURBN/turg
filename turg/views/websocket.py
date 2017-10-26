@@ -37,7 +37,7 @@ class WebSocket(web.View):
 
         await ws.send_json({
             'data': {'color': color},
-            'meta': {'type': 'user_color'},
+            'meta': {'type': 'userColor'},
         })
 
         async for msg in ws:
