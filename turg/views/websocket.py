@@ -77,7 +77,7 @@ async def retrieve(args, ws, app, meta):
 
 
 async def place(args, ws, app, meta):
-    args.pop('capturable', None)
+    args.pop('name', None)
     if not verify_payload(args):
         return await ws.send_json({
             'error': {'message': 'Invalid payload'},
@@ -101,8 +101,8 @@ async def broadcast(data, app, meta):
     if not isinstance(data, dict):
         data = attr.asdict(data)
         data.pop('updated', None)
-        if not data.get('capturable'):
-            data.pop('capturable', None)
+        if not data.get('name'):
+            data.pop('name', None)
 
     for ws in app['websockets']:
         try:

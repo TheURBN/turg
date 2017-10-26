@@ -21,7 +21,7 @@ class Voxels(web.View):
     async def post(self):
         try:
             payload = await self.request.json()
-            payload.pop('capturable', None)
+            payload.pop('name', None)
             if not verify_payload(payload):
                 raise ValueError("Incorrect payload")
             voxel = Voxel(**payload)

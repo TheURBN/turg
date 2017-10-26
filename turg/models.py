@@ -20,7 +20,7 @@ class Voxel(object):
     y = attr.ib(convert=int)
     z = attr.ib(convert=int)
     owner = attr.ib()
-    capturable = attr.ib(default=False)
+    name = attr.ib(default=None)
     updated = attr.ib(default=None)
 
 
@@ -30,8 +30,8 @@ async def get_voxels(x, y, range, db):
                            projection={'_id': False, 'updated': False})
     data = []
     async for result in results:
-        if not result.get('capturable'):
-            result.pop('capturable', None)
+        if not result.get('name'):
+            result.pop('name', None)
         data.append(result)
 
     return data
@@ -56,9 +56,9 @@ async def store_voxel(voxel: Voxel, db):
     occupied = [n for n in neighbours if n['x'] == voxel.x
                 and n['y'] == voxel.y and n['z'] == voxel.z]
 
-    capturable = occupied and occupied[0].get('capturable')
+    flag = occupied and occupied[0].get('name')
 
-    if capturable and occupied[0].get('owner') != voxel.owner:
+    if flag and occupied[0].get('owner') != voxel.owner:
         if occupied[0].get('updated'):
             ownership_time = (voxel.updated - occupied[0].get('updated')).total_seconds()
         else:
@@ -70,20 +70,20 @@ async def store_voxel(voxel: Voxel, db):
         await db.leaderboard.update_one({'owner': occupied[0]['owner']},
                                         {'$inc': {'time': ownership_time}},
                                         upsert=True)
-        voxel.capturable = True
+        voxel.name = occupied[0]['name']
         return voxel
 
     conflict = [n for n in neighbours if n['owner'] != voxel.owner]
     logger.info("VOXEL: %s, N: %s", voxel, neighbours)
 
     if occupied:
-        occupied[0].pop('capturable', None)
+        occupied[0].pop('name', None)
         occupied[0].pop('updated', None)
         raise ValueError({"message": "Space already occupied",
                           "conflict": occupied[0]})
     if conflict:
         for v in conflict:
-            v.pop('capturable', None)
+            v.pop('name', None)
             v.pop('updated', None)
         raise ValueError({"message": "Too close to other player's voxels",
                           "conflict": conflict})
@@ -101,7 +101,7 @@ async def get_leaders(db):
     async for leader in leaders:
         leaderboard[leader['owner']] = leader['time']
 
-    results = db.data.find({'capturable': True}, projection={'_id': False})
+    results = db.data.find({'name': {'$ne': None}}, projection={'_id': False})
     async for result in results:
         if result.get('updated'):
             leaderboard[result['owner']] += (curr_time - result['updated']).total_seconds()
