@@ -32,6 +32,7 @@ async def on_start(app):
     app['db_client'] = client
     app['db'] = client.get_default_database()  # defined in mongodb_uri
     app['websockets'] = []
+    app['websockets_colors'] = {}
     app['users'] = {}
     await app['db'].data.create_index([('x', ASCENDING), ('y', ASCENDING)])
     asyncio.ensure_future(ping(app))
