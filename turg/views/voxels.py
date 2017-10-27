@@ -2,7 +2,7 @@ from aiohttp import web
 
 from turg.config import Config
 from turg.logger import getLogger
-from turg.models import Voxel, get_voxels, store_voxel, verify_payload
+from turg.models import Voxel, get_voxels, store_voxel_as_root, verify_payload
 
 from turg.views import check_authorization
 from turg.views.websocket import broadcast
@@ -25,7 +25,6 @@ class Voxels(web.View):
     async def post(self):
         try:
             payload = await self.request.json()
-            payload.pop('name', None)
             if not verify_payload(payload):
                 raise ValueError("Incorrect payload")
             voxel = Voxel(**payload)
@@ -38,8 +37,9 @@ class Voxels(web.View):
         db = self.request.app['db']
 
         try:
-            voxel = await store_voxel(voxel, db)
-        except ValueError:
+            voxel = await store_voxel_as_root(voxel, db)
+        except ValueError as e:
+            logger.exception(e)
             return web.json_response({'error': {'message': 'Invalid voxel location'}}, status=409)
         else:
             await broadcast(voxel, self.request.app, {'id': None, 'type': 'update'})
