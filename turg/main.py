@@ -5,6 +5,7 @@ from pymongo import ASCENDING
 
 from turg.config import Config
 from turg.logger import getLogger
+from turg.ratelimiter import RateLimiter
 from turg.views import (
     voxels,
     websocket,
@@ -34,6 +35,7 @@ async def on_start(app):
     app['websockets'] = []
     app['websockets_colors'] = {}
     app['users'] = {}
+    app['limiter'] = RateLimiter(config.rate_limit)
     await app['db'].data.create_index([('x', ASCENDING), ('y', ASCENDING)])
     asyncio.ensure_future(ping(app))
 

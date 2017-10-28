@@ -40,8 +40,15 @@ class WebSocket(web.View):
             'meta': {'type': 'userColor'},
         })
 
+        ratelimiter = self.request.app['limiter']
+
         async for msg in ws:
             logger.info("MSG: %s", msg)
+            if ratelimiter.limit_exceeded(uid):
+                logger.error("Rate limit for user %s exceeded", uid)
+                msg = f'Requests limit of {ratelimiter.requests} per minute exceeded'
+                await ws.send_json({'error': {'message': msg}})
+                continue
             if msg.tp == WSMsgType.text:
                 if msg.data == 'close':
                     logger.info("Close ws connection")

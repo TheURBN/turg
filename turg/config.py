@@ -31,6 +31,8 @@ class Config(object):
     max_z = None
     ping_interval = None
     api_key = None
+    service_account = None
+    rate_limit = None
 
     def __init__(self):
         Config.load()
@@ -53,6 +55,7 @@ class Config(object):
         Config.max_y = get_from_env_or_config(config, 'max_y', 1000)
         Config.max_z = get_from_env_or_config(config, 'max_z', 100)
         Config.ping_interval = get_from_env_or_config(config, 'ping_interval', 20)
+        Config.rate_limit = get_from_env_or_config(config, 'rate_limit', 100)
 
         api_key = get_from_env_or_config(config, 'api_key', None)
 
