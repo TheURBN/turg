@@ -1,5 +1,5 @@
 import asyncio
-from aiohttp import web
+from aiohttp import web, ClientSession
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import ASCENDING
 
@@ -34,9 +34,21 @@ async def on_start(app):
     app['db'] = client.get_default_database()  # defined in mongodb_uri
     app['websockets'] = []
     app['websockets_colors'] = {}
+    app['colors_websocket'] = {}
     app['users'] = {}
     app['limiter'] = RateLimiter(config.rate_limit)
+
+    try:
+        async with ClientSession() as session:
+            async with session.get(config.jwt_certs_url) as res:
+                app['jwt_cers'] = await res.json()
+                logger.info("Load jwt certs: %s", app['jwt_cers'])
+    except:
+        logger.error('Get jwt certs error')
+        raise
+
     await app['db'].data.create_index([('x', ASCENDING), ('y', ASCENDING)])
+
     asyncio.ensure_future(ping(app))
 
 
