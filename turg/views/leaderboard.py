@@ -17,8 +17,16 @@ class Leaders(web.View):
 
 def factory(app):
     return {
-            'method': 'GET',
-            'path': '/v1/leaderboard/',
-            'handler': Leaders,
-            'expect_handler': web.Request.json,
-        }
+        'method': 'GET',
+        'path': '/v1/leaderboard/',
+        'handler': Leaders,
+        'expect_handler': web.Request.json,
+    }
+
+
+def cors():
+    return {
+        'allow_credentials': True,
+        'expose_headers': '*',
+        'allow_headers': '*'
+    }

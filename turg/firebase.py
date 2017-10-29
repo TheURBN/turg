@@ -1,19 +1,18 @@
-import os
-import json
 import asyncio
+import json
 
-from google.oauth2 import service_account
 from google.auth.transport.requests import AuthorizedSession
+from google.oauth2 import service_account
 
-from turg.logger import getLogger
 from turg.config import Config
+from turg.logger import getLogger
 
 logger = getLogger()
 config = Config()
 
 scopes = [
-  'https://www.googleapis.com/auth/userinfo.email',
-  'https://www.googleapis.com/auth/firebase.database',
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/firebase.database',
 ]
 
 
