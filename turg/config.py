@@ -70,3 +70,5 @@ class Config(object):
             raise ValueError("service_account parameter is missing in configuration")
 
         Config.service_account = service_account
+
+        Config.cors = get_from_env_or_config(config, 'cors_host', '*')
