@@ -1,4 +1,5 @@
 mongodb_uri: mongodb://mongo_db:27017/turg_db
+cors_host: 0.0.0.0:8008
 max_x: 5000
 max_y: 5000
 max_z: 100

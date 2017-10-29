@@ -1,4 +1,7 @@
 import asyncio
+
+import aiohttp_cors
+
 from aiohttp import web, ClientSession
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import ASCENDING
@@ -19,12 +22,17 @@ config = Config()
 def create_app():
     app = web.Application()
 
+    # Configure default CORS settings.
+    cors = aiohttp_cors.setup(app, )
+
     for view in (voxels, websocket, leaderboard):
         routes = view.factory(app)
         routes = routes if isinstance(routes, list) else [routes]
         for route in routes:
-            app.router.add_route(**route)
-
+            resoure_cors = None
+            if hasattr(view, 'cors'):
+                resoure_cors = {config.cors: aiohttp_cors.ResourceOptions(**view.cors())}
+            cors.add(app.router.add_route(**route), resoure_cors)
     return app
 
 

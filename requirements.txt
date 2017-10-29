@@ -1,4 +1,5 @@
 aiohttp==2.2.5
+aiohttp_cors==0.5.3
 attrs==17.2.0
 uvloop==0.8.1
 motor==1.1
