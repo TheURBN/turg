@@ -9,7 +9,6 @@ from turg.config import Config
 from turg.logger import getLogger
 from turg.ratelimiter import RateLimiter
 from turg.views import (
-    voxels,
     websocket,
     leaderboard,
 )
@@ -24,7 +23,7 @@ def create_app():
     # Configure default CORS settings.
     cors = aiohttp_cors.setup(app, )
 
-    for view in (voxels, websocket, leaderboard):
+    for view in (websocket, leaderboard):
         routes = view.factory(app)
         routes = routes if isinstance(routes, list) else [routes]
         for route in routes:
