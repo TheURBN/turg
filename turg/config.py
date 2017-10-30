@@ -40,6 +40,8 @@ class Config(object):
     rate_limit = None
     max_range = None
     jwt_certs_url = None
+    cache_seconds = None
+    cors = None
 
     def __init__(self):
         Config.load()
@@ -64,6 +66,7 @@ class Config(object):
         Config.ping_interval = get_from_env_or_config(config, 'ping_interval', 20)
         Config.rate_limit = get_from_env_or_config(config, 'rate_limit', 100)
         Config.max_range = get_from_env_or_config(config, 'max_range', 100)
+        Config.cache_seconds = get_from_env_or_config(config, 'cache_seconds', 1)
         Config.cors = get_from_env_or_config(config, 'cors_host', '*')
 
         Config.api_key = get_from_env_or_config(

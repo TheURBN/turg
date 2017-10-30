@@ -1,3 +1,4 @@
+from time import time
 from aiohttp import web
 
 from turg.config import Config
@@ -9,10 +10,17 @@ config = Config()
 
 
 class Leaders(web.View):
-    async def get(self):
-        data = await get_leaders(self.request.app['db'])
+    cache = None
+    cache_ts = None
 
-        return web.json_response(data, status=200)
+    async def get(self):
+        now = time()
+
+        if Leaders.cache is None or now > Leaders.cache_ts + config.cache_seconds:
+            Leaders.cache = await get_leaders(self.request.app['db'])
+            Leaders.cache_ts = now
+
+        return web.json_response(Leaders.cache, status=200)
 
 
 def factory(app):
