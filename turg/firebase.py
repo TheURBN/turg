@@ -48,18 +48,30 @@ async def update_users(app):
 
     for uid, user_data in data.items():
         if uid not in app['users']:
-            app['users'][uid] = user_data['color']
+            app['users'][uid] = {'color': user_data['color']}
+        else:
+            app['users'][uid].update({'color': user_data['color']})
 
 
-async def get_user_id(token, certs):
-    payload = jwt.decode(token=token, certs=certs, audience='theurbngame')
-    return payload['user_id']
+async def get_token_payload(token, app):
+    payload = jwt.decode(token=token, certs=app['jwt_cers'], audience='theurbngame')
+
+    if not payload['user_id'] in app['users']:
+        app['users'][payload['user_id']] = {'name': payload['name']}
+    else:
+        app['users'][payload['user_id']].update({'name': payload['name']})
+
+    return payload
 
 
 async def get_user_color(app, uid):
-    if uid in app['users']:
-        return app['users'][uid]
+    if uid in app['users'] and 'color' in app['users'][uid]:
+        return app['users'][uid]['color']
 
     await update_users(app)
 
-    return app['users'].get(uid)
+    return app['users'].get(uid, {}).get('color')
+
+
+async def get_user_name(app, uid):
+    return app['users'].get(uid, {}).get('name')
