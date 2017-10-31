@@ -6,7 +6,7 @@ from aiohttp.web import WebSocketResponse
 from turg.config import Config
 from turg.logger import getLogger
 from turg.models import get_voxels, verify_payload, store_voxel, Voxel
-from turg.firebase import get_user_color, get_user_id
+from turg.firebase import get_token_payload, get_user_color
 
 logger = getLogger()
 config = Config()
@@ -45,7 +45,9 @@ class WebSocket(web.View):
                 {'error': {'message': 'Data not valid'}}, status=400)
 
         try:
-            uid = await get_user_id(token, app['jwt_cers'])
+            payload = await get_token_payload(token, app)
+            uid = payload['user_id']
+            name = payload['name']
         except ValueError as e:
             return web.json_response(
                 {'error': {'message': str(e)}}, status=401)
@@ -75,6 +77,7 @@ class WebSocket(web.View):
             'data': {'color': color},
             'meta': {'type': 'userColor'},
         })
+        await user_login_broadcast(name, app)
 
         ratelimiter = app['limiter']
 
@@ -104,6 +107,8 @@ class WebSocket(web.View):
         app['websockets'].remove(ws)
         app['websockets_colors'].pop(id(ws), None)
         app['colors_websocket'].pop(color, None)
+
+        await user_logout_broadcast(name, app)
 
         return ws
 
@@ -171,6 +176,22 @@ async def place(args, ws, app, meta):
         return await ws.send_json(res)
     else:
         return await broadcast(voxel, app, meta)
+
+
+async def user_login_broadcast(name, app):
+    await broadcast({
+        'name': name,
+    }, app, {
+        'type': 'user_login',
+    })
+
+
+async def user_logout_broadcast(name, app):
+    await broadcast({
+        'name': name,
+    }, app, {
+        'type': 'user_logout',
+    })
 
 
 async def broadcast(data, app, meta):
