@@ -56,7 +56,7 @@ async def store_voxel(voxel: Voxel, db):
         if too_far_from_flag(voxel, neighbours, flag):
             data = response_cleanup(flag)
             raise ValueError(
-                {"message": "Your must have at least one voxel no farther than 5 spaces from flag",
+                {"message": "You must have at least one voxel no farther than 5 spaces from flag",
                  "conflict": data})
         return await capture_flag(voxel, flag, db)
 
