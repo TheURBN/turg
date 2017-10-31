@@ -204,7 +204,7 @@ async def broadcast(data, app, meta):
     for ws in app['websockets']:
         try:
             await ws.send_json({'data': data, 'meta': meta})
-            logger.info("Broadcast data %s for %s", meta['id'], id(ws))
+            logger.info("Broadcast data %s for %s", meta.get('id'), id(ws))
         except:
             logger.exception("Failed to send update to socket %s", id(ws))
 
