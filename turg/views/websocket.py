@@ -182,7 +182,7 @@ async def user_login_broadcast(name, app):
     await broadcast({
         'name': name,
     }, app, {
-        'type': 'user_login',
+        'type': 'userLogin',
     })
 
 
@@ -190,7 +190,7 @@ async def user_logout_broadcast(name, app):
     await broadcast({
         'name': name,
     }, app, {
-        'type': 'user_logout',
+        'type': 'userLogout',
     })
 
 
