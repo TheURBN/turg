@@ -2,13 +2,13 @@ qbplotter
 =========
 
 ```
-⇒  python qbplotter.py --src ./samples/spotA.qb --owner 4 --x 502 --y 502 --sleep 10
+⇒  python qbplotter.py --src ./samples/spotA.qb --x 502 --y 502
 Loading ./samples/spotA.qb
 Loading Matrix b'' with size (18, 9, 16)
 Object contains 384 voxels
 Plot start position (502, 502, 0)
 Owner 4
-Connecting with https://turg-svc.herokuapp.com/v1/ws/
+Connecting with XXX
 0/384 voxels
 100/384 voxels
 200/384 voxels
