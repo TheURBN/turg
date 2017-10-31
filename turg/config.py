@@ -14,13 +14,18 @@ def str2bool(val):
     return val
 
 
-def get_from_env_or_config(config, param, default=None, param_type=None):
+def get_from_env_or_config(config, param, default=None, param_type=None, error=None):
     if default and not param_type:
         param_type = type(default)
     elif not default and not param_type:
         param_type = str
 
-    return param_type(os.environ.get(param.upper(), config.get(param, default)))
+    config_param = os.environ.get(param.upper(), config.get(param, default))
+
+    if error and not config_param:
+        raise ValueError(error)
+
+    return param_type(config_param)
 
 
 class Config(object):
@@ -33,7 +38,10 @@ class Config(object):
     api_key = None
     service_account = None
     rate_limit = None
+    max_range = None
+    jwt_certs_url = None
     cache_seconds = None
+    cors = None
 
     def __init__(self):
         Config.load()
@@ -57,20 +65,16 @@ class Config(object):
         Config.max_z = get_from_env_or_config(config, 'max_z', 100)
         Config.ping_interval = get_from_env_or_config(config, 'ping_interval', 20)
         Config.rate_limit = get_from_env_or_config(config, 'rate_limit', 100)
+        Config.max_range = get_from_env_or_config(config, 'max_range', 100)
         Config.cache_seconds = get_from_env_or_config(config, 'cache_seconds', 1)
-
-        api_key = get_from_env_or_config(config, 'api_key', None)
-
-        if not api_key or api_key == 'None':
-            raise ValueError("api_key parameter is missing in configuration")
-
-        Config.api_key = api_key
-
-        service_account = get_from_env_or_config(config, 'service_account', None)
-
-        if not service_account or service_account == 'None':
-            raise ValueError("service_account parameter is missing in configuration")
-
-        Config.service_account = service_account
-
         Config.cors = get_from_env_or_config(config, 'cors_host', '*')
+
+        Config.api_key = get_from_env_or_config(
+            config, 'api_key',
+            error="api_key parameter is missing in configuration")
+        Config.service_account = get_from_env_or_config(
+            config, 'service_account',
+            error="service_account parameter is missing in configuration")
+        Config.jwt_certs_url = get_from_env_or_config(
+            config, 'jwt_certs_url',
+            error="jwt_certs_url parameter is missing in configuration")

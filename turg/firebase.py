@@ -2,6 +2,7 @@ import asyncio
 import json
 
 from google.auth.transport.requests import AuthorizedSession
+from google.auth import jwt
 from google.oauth2 import service_account
 
 from turg.config import Config
@@ -50,9 +51,15 @@ async def update_users(app):
             app['users'][uid] = user_data['color']
 
 
+async def get_user_id(token, certs):
+    payload = jwt.decode(token=token, certs=certs, audience='theurbngame')
+    return payload['user_id']
+
+
 async def get_user_color(app, uid):
     if uid in app['users']:
         return app['users'][uid]
 
     await update_users(app)
+
     return app['users'].get(uid)

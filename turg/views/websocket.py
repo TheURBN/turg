@@ -3,23 +3,55 @@ import attr
 from aiohttp import web, WSMsgType
 from aiohttp.web import WebSocketResponse
 
+from turg.config import Config
 from turg.logger import getLogger
 from turg.models import get_voxels, verify_payload, store_voxel, Voxel
-from turg.firebase import get_user_color
+from turg.firebase import get_user_color, get_user_id
 
 logger = getLogger()
+config = Config()
+
+
+def get_ws_by_id(_id, app):
+    for item in app['websockets']:
+        if id(item) == _id:
+            return item
+
+    return None
+
+
+async def close_old_user_connections(color, app):
+    old_ws_id = app['colors_websocket'][color]
+    old_ws = get_ws_by_id(old_ws_id, app)
+
+    if old_ws:
+        logger.info("Close old WS connections for %s", color)
+
+        await old_ws.close()
+
+        app['websockets'].remove(old_ws)
+        app['websockets_colors'].pop(id(old_ws), None)
+        app['colors_websocket'].pop(color, None)
 
 
 class WebSocket(web.View):
     async def get(self):
+        app = self.request.app
+
         try:
-            uid = self.request.query['uid']
+            token = self.request.query['token']
         except KeyError:
             return web.json_response(
                 {'error': {'message': 'Data not valid'}}, status=400)
 
         try:
-            color = await get_user_color(self.request.app, uid)
+            uid = await get_user_id(token, app['jwt_cers'])
+        except ValueError as e:
+            return web.json_response(
+                {'error': {'message': str(e)}}, status=401)
+
+        try:
+            color = await get_user_color(app, uid)
         except ValueError:
             return web.json_response(
                 {'error': {'message': 'Can\'t get color info'}}, status=500)
@@ -29,18 +61,22 @@ class WebSocket(web.View):
 
         logger.info('User color: %s', color)
 
+        if color in app['colors_websocket']:
+            await close_old_user_connections(color, app)
+
         ws = WebSocketResponse()
         await ws.prepare(self.request)
 
-        self.request.app['websockets'].append(ws)
-        self.request.app['websockets_colors'][id(ws)] = color
+        app['websockets'].append(ws)
+        app['colors_websocket'][color] = id(ws)
+        app['websockets_colors'][id(ws)] = color
 
         await ws.send_json({
             'data': {'color': color},
             'meta': {'type': 'userColor'},
         })
 
-        ratelimiter = self.request.app['limiter']
+        ratelimiter = app['limiter']
 
         async for msg in ws:
             logger.info("MSG: %s", msg)
@@ -60,12 +96,14 @@ class WebSocket(web.View):
                         pass
                     else:
                         logger.info("Got request: %s", data)
-                        await process_request(data, ws, self.request.app)
+                        await process_request(data, ws, app)
 
             elif msg.tp == WSMsgType.error:
                 logger.exception("Got ws error %s", id(ws))
 
-        self.request.app['websockets'].remove(ws)
+        app['websockets'].remove(ws)
+        app['websockets_colors'].pop(id(ws), None)
+        app['colors_websocket'].pop(color, None)
 
         return ws
 
@@ -101,6 +139,12 @@ async def process_request(data, ws, app):
 
 async def retrieve(args, ws, app, meta):
     x, y, r = args.get('x', 0), args.get('y', 0), args.get('range', 25)
+
+    if r <= 0:
+        r = 25
+    elif r > config.max_range:
+        r = config.max_range
+
     voxels = await get_voxels(x, y, r, app['db'])
     await ws.send_json({'data': voxels, 'meta': meta})
 

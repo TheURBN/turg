@@ -5,6 +5,7 @@ max_y: 5000
 max_z: 100
 ping_interval: 20
 rate_limit: 60
+max_range: 100
 api_key: 0cbf88f3-a487-4b9c-8e56-33defd257a26
 cache_seconds: 1
 service_account: '{
@@ -19,3 +20,4 @@ service_account: '{
 	"auth_provider_x509_cert_url": "auth_provider_x509_cert_url",
 	"client_x509_cert_url": "client_x509_cert_url"
 }'
+jwt_certs_url: https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com
