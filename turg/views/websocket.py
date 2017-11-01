@@ -30,7 +30,9 @@ async def close_old_user_connections(color, app):
 
         await old_ws.close()
 
-        app['websockets'].remove(old_ws)
+        if old_ws in app['websockets']:
+            app['websockets'].remove(old_ws)
+
         app['websockets_colors'].pop(id(old_ws), None)
         app['colors_websocket'].pop(color, None)
 
@@ -61,8 +63,6 @@ class WebSocket(web.View):
 
         if not color:
             return web.json_response(status=401)
-
-        logger.info('User color: %s', color)
 
         if color in app['colors_websocket']:
             await close_old_user_connections(color, app)
@@ -184,9 +184,9 @@ async def place(args, ws, app, meta, name):
             res['error'] = e.args[0]
         return await ws.send_json(res)
     else:
-        if getattr(voxel, 'captured'):
+        if getattr(voxel, 'captured', None):
             await broadcast(voxel, app, meta)
-            return await flag_captured(name, voxel['name'], app)
+            return await flag_captured(name, voxel.name, app)
 
         return await broadcast(voxel, app, meta)
 

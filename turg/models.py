@@ -193,5 +193,5 @@ async def get_leaders(app):
         if result.get('updated'):
             leaderboard[result['owner']] += (curr_time - result['updated']).total_seconds()
 
-    return [{'name': names.get(k, k), 'time': leaderboard[k]} for k in
+    return [{'owner': k, 'name': names.get(k, k), 'time': leaderboard[k]} for k in
             sorted(leaderboard, key=leaderboard.get, reverse=True)]
