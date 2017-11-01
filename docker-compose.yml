@@ -21,5 +21,9 @@ services:
   mongo_db:
     container_name: mongo_db
     image: mongo:3.4
+    ports:
+      - "27017:27017"
+    expose:
+      - "27017"
     volumes:
       - ./dbvolume:/data/db
