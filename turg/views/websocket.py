@@ -1,5 +1,6 @@
 import json
 import attr
+import time
 from aiohttp import web, WSMsgType
 from aiohttp.web import WebSocketResponse
 
@@ -99,7 +100,7 @@ class WebSocket(web.View):
                         pass
                     else:
                         logger.info("Got request: %s", data)
-                        await process_request(data, ws, app)
+                        await process_request(data, ws, app, name)
 
             elif msg.tp == WSMsgType.error:
                 logger.exception("Got ws error %s", id(ws))
@@ -122,7 +123,7 @@ def factory(app):
     }
 
 
-async def process_request(data, ws, app):
+async def process_request(data, ws, app, name):
     if not isinstance(data, dict) or 'type' not in data or 'args' not in data:
         return {'error': {'message': {'Method and args required'}}}
 
@@ -134,7 +135,7 @@ async def process_request(data, ws, app):
     if _type == 'range':
         await retrieve(args, ws, app, meta)
     elif _type == 'update':
-        await place(args, ws, app, meta)
+        await place(args, ws, app, meta, name)
     else:
         await ws.send_json({
             'error': {'message': {'Unknown method or no method specified'}},
@@ -143,6 +144,7 @@ async def process_request(data, ws, app):
 
 
 async def retrieve(args, ws, app, meta):
+    start_time = time.time()
     x, y, r = args.get('x', 0), args.get('y', 0), args.get('range', 25)
 
     if r <= 0:
@@ -151,10 +153,15 @@ async def retrieve(args, ws, app, meta):
         r = config.max_range
 
     voxels = await get_voxels(x, y, r, app['db'])
+
+    logger.info("Get voxels for range (x - %s, y - %s, range - %s) – (%.02fs)",
+                x, y, r, time.time() - start_time)
+
     await ws.send_json({'data': voxels, 'meta': meta})
 
 
-async def place(args, ws, app, meta):
+async def place(args, ws, app, meta, name):
+    start_time = time.time()
     args.pop('name', None)
     if not verify_payload(args):
         return await ws.send_json({
@@ -165,7 +172,9 @@ async def place(args, ws, app, meta):
     try:
         args['owner'] = app['websockets_colors'][id(ws)]
         logger.info('WS color: %s', args['owner'])
-        voxel = await store_voxel(Voxel(**args), app['db'])
+        voxel = await store_voxel(Voxel(**args), app)
+        logger.info("Store voxel – (%.02fs)",
+                    time.time() - start_time)
     except (ValueError, KeyError) as e:
         res = {
             'error': {'message': str(e)},
@@ -175,7 +184,20 @@ async def place(args, ws, app, meta):
             res['error'] = e.args[0]
         return await ws.send_json(res)
     else:
+        if getattr(voxel, 'captured'):
+            await broadcast(voxel, app, meta)
+            return await flag_captured(name, voxel['name'], app)
+
         return await broadcast(voxel, app, meta)
+
+
+async def flag_captured(name, flag, app):
+    await broadcast({
+        'name': name,
+        'flag': flag,
+    }, app, {
+        'type': 'flagCaptured',
+    })
 
 
 async def user_login_broadcast(name, app):

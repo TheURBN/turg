@@ -46,7 +46,8 @@ def verify_payload(payload):
     return True
 
 
-async def store_voxel(voxel: Voxel, db):
+async def store_voxel(voxel: Voxel, app):
+    db = app['db']
     neighbours = await get_neighbours(db, voxel, 5)
 
     occupied = space_occupied(voxel, neighbours)
@@ -58,7 +59,7 @@ async def store_voxel(voxel: Voxel, db):
             raise ValueError(
                 {"message": "You must have at least one voxel no farther than 5 spaces from flag",
                  "conflict": data})
-        return await capture_flag(voxel, flag, db)
+        return await capture_flag(voxel, flag, app)
 
     if occupied:
         data = response_cleanup(occupied)
@@ -135,7 +136,9 @@ def response_cleanup(data):
     return data
 
 
-async def capture_flag(new_voxel, curr_voxel, db):
+async def capture_flag(new_voxel, curr_voxel, app):
+    db = app['db']
+
     if curr_voxel.get('updated'):
         ownership_time = (new_voxel.updated - curr_voxel.get('updated')).total_seconds()
     else:
@@ -148,6 +151,7 @@ async def capture_flag(new_voxel, curr_voxel, db):
                                     {'$inc': {'time': ownership_time}},
                                     upsert=True)
     new_voxel.name = curr_voxel['name']
+    new_voxel.captured = True
     return new_voxel
 
 
@@ -165,7 +169,17 @@ def too_far_from_flag(voxel, neighbours, flag):
     return all([n.get('owner') != voxel.owner for n in neighbours])
 
 
-async def get_leaders(db):
+def get_owner_names(users):
+    names = {}
+    for uid, user in users.items():
+        names[user.get('color')] = user.get('name')
+
+    return names
+
+
+async def get_leaders(app):
+    db = app['db']
+    names = get_owner_names(app['users'])
     leaderboard = defaultdict(float)
     curr_time = datetime.utcnow()
 
@@ -179,5 +193,5 @@ async def get_leaders(db):
         if result.get('updated'):
             leaderboard[result['owner']] += (curr_time - result['updated']).total_seconds()
 
-    return [{'owner': k, 'time': leaderboard[k]} for k in
+    return [{'name': names.get(k, k), 'time': leaderboard[k]} for k in
             sorted(leaderboard, key=leaderboard.get, reverse=True)]
