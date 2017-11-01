@@ -171,7 +171,7 @@ def too_far_from_flag(voxel, neighbours, flag):
 
 def get_owner_names(users):
     names = {}
-    for user in users.items():
+    for uid, user in users.items():
         names[user['color']] = user['name']
 
     return names
