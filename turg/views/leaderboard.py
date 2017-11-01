@@ -17,7 +17,7 @@ class Leaders(web.View):
         now = time()
 
         if Leaders.cache is None or now > Leaders.cache_ts + config.cache_seconds:
-            Leaders.cache = await get_leaders(self.request.app['db'])
+            Leaders.cache = await get_leaders(self.request.app)
             Leaders.cache_ts = now
 
         return web.json_response(Leaders.cache, status=200)
