@@ -183,7 +183,7 @@ async def get_leaders(app):
     leaderboard = defaultdict(float)
     curr_time = datetime.utcnow()
 
-    leaders = db.leaderboard.find(projection={'_id': False})
+    leaders = db.leaderboard.find({'owner': {'$ne': '#ff00ff'}}, projection={'_id': False})
 
     async for leader in leaders:
         leaderboard[leader['owner']] = leader['time']
