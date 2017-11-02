@@ -35,7 +35,6 @@ class Config(object):
     max_y = None
     max_z = None
     ping_interval = None
-    api_key = None
     service_account = None
     rate_limit = None
     max_range = None
@@ -69,9 +68,6 @@ class Config(object):
         Config.cache_seconds = get_from_env_or_config(config, 'cache_seconds', 1)
         Config.cors = get_from_env_or_config(config, 'cors_host', '*')
 
-        Config.api_key = get_from_env_or_config(
-            config, 'api_key',
-            error="api_key parameter is missing in configuration")
         Config.service_account = get_from_env_or_config(
             config, 'service_account',
             error="service_account parameter is missing in configuration")
