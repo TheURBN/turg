@@ -22,6 +22,10 @@ args = parser.parse_args()
 SPOT_FLAG_COLOR = '#ff00ff'
 
 
+def voxel_id(x, y, z):
+    return f'{x}_{y}_{z}'
+
+
 def qb_decode(qb_file_path):
     print(f"Loading {qb_file_path}")
     with open(qb_file_path, 'rb') as qbfile:
@@ -40,6 +44,11 @@ def qb_decode(qb_file_path):
             sys.exit(1)
         _ = struct.unpack("I", qbfile.read(4))[0]  # Visibility-Mask encoded
         num_matrices = struct.unpack("I", qbfile.read(4))[0]
+        print(f"Found {num_matrices} matrices")
+
+        colors_palette = []
+        object_dict = {}
+
         for _ in range(num_matrices):
             name_length = struct.unpack("B", qbfile.read(1))[0]
             name = struct.unpack(str(name_length) + "s", qbfile.read(name_length))[0]
@@ -47,8 +56,6 @@ def qb_decode(qb_file_path):
             print(f"Loading Matrix {name} with size {size}")
 
             _ = struct.unpack("iii", qbfile.read(12))
-            object_list = list()
-            colors_pallete = list()
             for z in range(size[2]):
                 for y in range(size[1]):
                     for x in range(size[0]):
@@ -56,26 +63,68 @@ def qb_decode(qb_file_path):
                         if color:
                             dec_rgb = [(color >> (8 * i)) & 255 for i in range(3)]
                             hex_color = "#{}".format(binascii.hexlify(struct.pack('BBB', *dec_rgb)).decode(encoding='UTF-8'))
-                            if hex_color not in colors_pallete:
-                                colors_pallete.append(hex_color)
+                            if hex_color not in colors_palette:
+                                colors_palette.append(hex_color)
                             if z_axis_orientation:
-                                object_list.append((x, z, y, hex_color))
+                                object_dict[voxel_id(x, z, y)] = [x, z, y, hex_color]
                             else:
-                                object_list.append((x, y, z, hex_color))
-            return object_list, colors_pallete
+                                object_dict[voxel_id(x, y, z)] = [x, y, z, hex_color]
+        return object_dict, colors_palette
 
 
-def urb_ws_plotter(object_list, pallete, pos, turg_db):
-    print(f"Object contains {len(object_list)} voxels")
+def optimise(object_dict):
+    print("Optimising voxels...")
+
+    def neighbour(voxel, x_diff, y_diff, z_diff):
+        return voxel_id(voxel[0] + x_diff,
+                        voxel[1] + y_diff,
+                        voxel[2] + z_diff)
+
+    neighbours = (
+        (1, 0, 0),
+        (0, 1, 0),
+        (0, 0, 1),
+        (-1, 0, 0),
+        (0, -1, 0),
+        (0, 0, -1),
+    )
+
+    def is_surrounded(voxel):
+        if all(map(lambda n: neighbour(voxel, *n) in object_dict, neighbours)):
+            return True
+
+        return False
+
+    optimised = {}
+
+    for v_id, voxel in object_dict.items():
+        if not is_surrounded(voxel):
+            optimised[v_id] = voxel
+
+    gone = len(object_dict) - len(optimised)
+    try:
+        gone_relative = 100 - len(optimised) / len(object_dict) * 100
+    except ZeroDivisionError:
+        gone_relative = 0
+
+    print("Optimised away {0} voxels ({1:.2f}%)".format(gone, gone_relative))
+
+    return optimised
+
+
+def urb_ws_plotter(object_dict, palette, pos, turg_db):
+    print(f"Object contains {len(object_dict)} voxels")
     print(f"Connecting with {turg_db}")
     print(f"Plot start position {pos}")
-    [print(color(chr(9608), chr_color), end='') for chr_color in pallete]
+    [print(color(chr(9608), chr_color), end='') for chr_color in palette]
+    print()
+    print("palette = [{}]".format(','.join(map(lambda c: f'\'{c}\'', palette))))
     print()
 
     db = MongoClient(turg_db).get_database()
 
     def docs():
-        for o in object_list:
+        for _, o in optimise(object_dict).items():
             if o[3] == SPOT_FLAG_COLOR:
                 print(f"Spot flag at {o[0]}x{o[1]}x{o[2]}")
                 name = f"Spot{o[0]}{o[1]}"
@@ -92,6 +141,6 @@ def urb_ws_plotter(object_list, pallete, pos, turg_db):
     print(f"Inserted {len(result.inserted_ids)} voxels")
 
 if __name__ == '__main__':
-    pic = qb_decode(os.path.expanduser(args.src))
+    objects, palette = qb_decode(os.path.expanduser(args.src))
     pos = (args.x, args.y, args.z)
-    urb_ws_plotter(pic[0], pic[1], pos, args.turg_db)
+    urb_ws_plotter(objects, palette, pos, args.turg_db)
