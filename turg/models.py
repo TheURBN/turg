@@ -190,7 +190,7 @@ async def get_leaders(app):
 
     results = db.data.find({'name': {'$ne': None}}, projection={'_id': False})
     async for result in results:
-        if result.get('updated') and result.get['owner'] != '#ff00ff':
+        if result.get('updated') and result.get('owner') != '#ff00ff':
             leaderboard[result['owner']] += (curr_time - result['updated']).total_seconds()
 
     return [{'owner': k, 'name': names.get(k, k), 'time': leaderboard[k]} for k in
