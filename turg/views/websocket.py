@@ -67,7 +67,7 @@ class WebSocket(web.View):
         if color in app['colors_websocket']:
             await close_old_user_connections(color, app)
 
-        ws = WebSocketResponse()
+        ws = WebSocketResponse(compress=True)
         await ws.prepare(self.request)
 
         app['websockets'].append(ws)
