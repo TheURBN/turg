@@ -4,6 +4,7 @@ import datetime
 import os
 import struct
 import sys
+import json
 
 from colors import color
 from pymongo import MongoClient
@@ -20,6 +21,13 @@ parser.add_argument("--turg-db", help="theurbn db", default='', type=str)
 args = parser.parse_args()
 
 SPOT_FLAG_COLOR = '#ff00ff'
+
+SPOT_NAMES = ['Apocalypse Peaks', 'Blow Me Down', 'Cockburn Town',
+              'Disappointment Islands', 'Eureka', 'Frankenstein',
+              'Gogogogo', 'Heckmondwike', 'Innaloo', 'Jupiter',
+              'Kanakanak', 'Le Tampon', 'Middelfart', 'Nobber',
+              'Penistone', 'Rimswell', 'Sandwich', 'Termonfeckin',
+              'Unalaska', 'Wankum', 'Zigzag']
 
 
 def voxel_id(x, y, z):
@@ -62,7 +70,9 @@ def qb_decode(qb_file_path):
                         color = struct.unpack("I", qbfile.read(4))[0]
                         if color:
                             dec_rgb = [(color >> (8 * i)) & 255 for i in range(3)]
-                            hex_color = "#{}".format(binascii.hexlify(struct.pack('BBB', *dec_rgb)).decode(encoding='UTF-8'))
+                            hex_color = "#{}".format(
+                                binascii.hexlify(struct.pack('BBB', *dec_rgb)).decode(
+                                    encoding='UTF-8'))
                             if hex_color not in colors_palette:
                                 colors_palette.append(hex_color)
                             if z_axis_orientation:
@@ -117,17 +127,16 @@ def urb_ws_plotter(object_dict, palette, pos, turg_db):
     print(f"Connecting with {turg_db}")
     print(f"Plot start position {pos}")
     [print(color(chr(9608), chr_color), end='') for chr_color in palette]
-    print()
-    print("palette = [{}]".format(','.join(map(lambda c: f'\'{c}\'', palette))))
-    print()
+    print("Colours list for Firebase DB")
+    print(json.dumps([{i[1:]: {'color': i} for i in palette}]))
 
     db = MongoClient(turg_db).get_database()
 
     def docs():
         for _, o in optimise(object_dict).items():
             if o[3] == SPOT_FLAG_COLOR:
-                print(f"Spot flag at {o[0]}x{o[1]}x{o[2]}")
-                name = f"Spot{o[0]}{o[1]}"
+                name = SPOT_NAMES.pop(0)
+                print(f"Spot {name} at {o[0]}x{o[1]}x{o[2]}")
             else:
                 name = None
             yield {'x': o[0] + pos[0],
@@ -139,6 +148,7 @@ def urb_ws_plotter(object_dict, palette, pos, turg_db):
 
     result = db.data.insert_many(docs(), ordered=False)
     print(f"Inserted {len(result.inserted_ids)} voxels")
+
 
 if __name__ == '__main__':
     objects, palette = qb_decode(os.path.expanduser(args.src))
