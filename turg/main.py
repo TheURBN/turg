@@ -77,7 +77,8 @@ async def ping(app):
                 closed_ws.append(ws)
 
         for ws in closed_ws:
-            app['websockets'].remove(ws)
+            if ws in app['websockets']:
+                app['websockets'].remove(ws)
 
 
 async def on_shutdown(app):
