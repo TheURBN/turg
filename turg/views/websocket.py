@@ -44,6 +44,7 @@ class WebSocket(web.View):
         try:
             token = self.request.query['token']
         except KeyError:
+            logger.exception("Data not valid")
             return web.json_response(
                 {'error': {'message': 'Data not valid'}}, status=400)
 
@@ -52,16 +53,19 @@ class WebSocket(web.View):
             uid = payload['user_id']
             name = payload['name']
         except ValueError as e:
+            logger.exception("Can't get token payload")
             return web.json_response(
                 {'error': {'message': str(e)}}, status=401)
 
         try:
             color = await get_user_color(app, uid)
         except ValueError:
+            logger.exception("Can't get color info")
             return web.json_response(
                 {'error': {'message': 'Can\'t get color info'}}, status=500)
 
         if not color:
+            logger.exception("No user color")
             return web.json_response(status=401)
 
         if color in app['colors_websocket']:
@@ -105,7 +109,9 @@ class WebSocket(web.View):
             elif msg.tp == WSMsgType.error:
                 logger.exception("Got ws error %s", id(ws))
 
-        app['websockets'].remove(ws)
+        if ws in app['websockets']:
+            app['websockets'].remove(ws)
+
         app['websockets_colors'].pop(id(ws), None)
         app['colors_websocket'].pop(color, None)
 
